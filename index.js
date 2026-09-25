@@ -33,27 +33,26 @@ async function run() {
         const database = client.db('kinbo_db')
         const productCollection = database.collection('products')
 
-        app.post('/api/products', async(req, res) =>{
+        app.post('/api/products', async (req, res) =>{
             const productData = req.body
             const result = await productCollection.insertOne(productData)
             res.send(result)
         })
-        // ----------
 
-        app.get('/api/products', async(req, res) =>{
-            const query = {}
-            if(req.query.companyId){
-                query.company_id = req.query.companyId
-            }
+       app.get('/api/products', async (req, res) =>{
+        const query = {}
+        if(req.query.companyId){
+            query.company_id = req.query.companyId
+        }
+        if(req.query.status){
+            query.status = req.query.status
+        }
+        const result = await productCollection.find(query).toArray()
+        res.send(result)
+       })
 
-            if(req.query.status){
-                query.status = req.query.status
-            }
 
-            const cursor = await productCollection.find(query).toArray()
-            res.send(cursor)
-        })
-
+    
 
 
 
