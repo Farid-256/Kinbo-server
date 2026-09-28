@@ -32,10 +32,17 @@ async function run() {
 
         const database = client.db('kinbo_db')
         const productCollection = database.collection('products')
+        const companyCollection = database.collection('company')
 
         app.post('/api/products', async (req, res) =>{
             const productData = req.body
             const result = await productCollection.insertOne(productData)
+            res.send(result)
+        })
+
+        app.post('/api/company', async (req, res) =>{
+            const companyData = req.body
+            const result = await companyCollection.insertOne(companyData)
             res.send(result)
         })
 
