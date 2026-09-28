@@ -40,7 +40,7 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/api/company', async (req, res) =>{
+        app.post('/api/mYcompany', async (req, res) =>{
             const companyData = req.body
             const result = await companyCollection.insertOne(companyData)
             res.send(result)
@@ -55,6 +55,15 @@ async function run() {
             query.status = req.query.status
         }
         const result = await productCollection.find(query).toArray()
+        res.send(result)
+       })
+
+       app.get('/api/my-company', async (req, res) =>{
+        const query = {}
+        if(req.query.sellerId){
+            query.sellerId = req.query.sellerId
+        }
+        const result = await companyCollection.findOne(query)
         res.send(result)
        })
 
