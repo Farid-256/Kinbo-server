@@ -48,8 +48,8 @@ async function run() {
 
        app.get('/api/products', async (req, res) =>{
         const query = {}
-        if(req.query.companyId){
-            query.company_id = req.query.companyId
+        if(req.query.sellerId){
+            query.sellerId = req.query.sellerId
         }
         if(req.query.status){
             query.status = req.query.status
@@ -64,7 +64,7 @@ async function run() {
             query.sellerId = req.query.sellerId
         }
         const result = await companyCollection.findOne(query)
-        res.send(result)
+        res.send(result || {})
        })
 
 
