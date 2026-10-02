@@ -20,12 +20,6 @@ const client = new MongoClient(uri, {
     }
 });
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-
-
-
 async function run() {
     try {
         await client.connect();
@@ -33,55 +27,84 @@ async function run() {
         const database = client.db('kinbo_db')
         const productCollection = database.collection('products')
         const companyCollection = database.collection('company')
+        const cartCollection = database.collection('cart')
 
-        app.post('/api/products', async (req, res) =>{
+        app.post('/api/products', async (req, res) => {
             const productData = req.body
             const result = await productCollection.insertOne(productData)
             res.send(result)
         })
 
-        app.post('/api/mYcompany', async (req, res) =>{
+        app.post('/api/mYcompany', async (req, res) => {
             const companyData = req.body
             const result = await companyCollection.insertOne(companyData)
             res.send(result)
         })
 
-       app.get('/api/products', async (req, res) =>{
-        const query = {}
-        if(req.query.sellerId){
-            query.sellerId = req.query.sellerId
-        }
-        if(req.query.status){
-            query.status = req.query.status
-        }
-        const result = await productCollection.find(query).toArray()
-        res.send(result)
-       })
+        app.post('/api/cart', async(req, res) =>{
+            const cartData = req.body
 
-       app.get('/api/my-company', async (req, res) =>{
-        const query = {}
-        if(req.query.sellerId){
-            query.sellerId = req.query.sellerId
-        }
-        const result = await companyCollection.findOne(query)
-        res.send(result || {})
-       })
+            const existing = await cartCollection.findOne({
+                userId: cartData.userId,
+                productId: cartData.productId
+            })
 
-       app.get('/api/products/:id', async(req, res) =>{
-        const {id} = req.params
-        const result = await productCollection.findOne({_id: new ObjectId(id)})
-        res.send(result)
-       })
+            if(existing){
+                await cartCollection.updateOne(
+                    {_id: existing._id},
+                    {$inc: {
+                        quantity: cartData.quantity
+                    }}
+                )
+                return res.send({message: 'Quantity updated'})
+            }
+
+            const result = await cartCollection.insertOne(cartData)
+            res.send(result)
+        })
+
+        app.get('/api/products', async (req, res) => {
+            const query = {}
+            if (req.query.sellerId) {
+                query.sellerId = req.query.sellerId
+            }
+            if (req.query.status) {
+                query.status = req.query.status
+            }
+            const result = await productCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.get('/api/my-company', async (req, res) => {
+            const query = {}
+            if (req.query.sellerId) {
+                query.sellerId = req.query.sellerId
+            }
+            const result = await companyCollection.findOne(query)
+            res.send(result || {})
+        })
+
+        app.get('/api/products/:id', async (req, res) => {
+            const { id } = req.params
+            const result = await productCollection.findOne({ _id: new ObjectId(id) })
+            res.send(result)
+        })
+
+        app.get('/api/cart/:userId', async(req, res) =>{
+            const {userId} = req.params
+            const result = await cartCollection.find({userId}).toArray()
+            res.send(result)
+        })
 
 
-    
 
 
 
 
 
 
-        await client.db('admin').command({ping: 1})
+
+        await client.db('admin').command({ ping: 1 })
         console.log("MongoDB connected successfully!");
     } finally {
         // await client.close();
@@ -90,5 +113,5 @@ async function run() {
 run().catch(console.dir);
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+    console.log(`Example app listening on port ${port}`)
 })
