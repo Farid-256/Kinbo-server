@@ -35,13 +35,13 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/api/mYcompany', async (req, res) => {
+        app.post('/api/my-company', async (req, res) => {
             const companyData = req.body
             const result = await companyCollection.insertOne(companyData)
             res.send(result)
         })
 
-        app.post('/api/cart', async(req, res) =>{
+        app.post('/api/cart', async (req, res) => {
             const cartData = req.body
 
             const existing = await cartCollection.findOne({
@@ -49,14 +49,16 @@ async function run() {
                 productId: cartData.productId
             })
 
-            if(existing){
+            if (existing) {
                 await cartCollection.updateOne(
-                    {_id: existing._id},
-                    {$inc: {
-                        quantity: cartData.quantity
-                    }}
+                    { _id: existing._id },
+                    {
+                        $inc: {
+                            quantity: cartData.quantity
+                        }
+                    }
                 )
-                return res.send({message: 'Quantity updated'})
+                return res.send({ message: 'Quantity updated' })
             }
 
             const result = await cartCollection.insertOne(cartData)
@@ -76,12 +78,14 @@ async function run() {
         })
 
         app.get('/api/my-company', async (req, res) => {
-            const query = {}
-            if (req.query.sellerId) {
-                query.sellerId = req.query.sellerId
+            const { sellerId } = req.query
+
+            if (!sellerId) {
+                return res.json(null)
             }
-            const result = await companyCollection.findOne(query)
-            res.send(result || {})
+
+            const result = await companyCollection.findOne({ sellerId })
+            res.json(result || null)
         })
 
         app.get('/api/products/:id', async (req, res) => {
@@ -90,9 +94,9 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/api/cart/:userId', async(req, res) =>{
-            const {userId} = req.params
-            const result = await cartCollection.find({userId}).toArray()
+        app.get('/api/cart/:userId', async (req, res) => {
+            const { userId } = req.params
+            const result = await cartCollection.find({ userId }).toArray()
             res.send(result)
         })
 
