@@ -28,6 +28,7 @@ async function run() {
         const productCollection = database.collection('products')
         const companyCollection = database.collection('company')
         const cartCollection = database.collection('cart')
+        const ordersCollection = database.collection('orders')
 
         app.post('/api/products', async (req, res) => {
             const productData = req.body
@@ -65,6 +66,19 @@ async function run() {
             res.send(result)
         })
 
+        app.post('/api/orders', async (req, res) => {
+            const ordersData = req.body
+            const result = await ordersCollection.insertOne(ordersData)
+
+            for (let item of ordersData.items) {
+                await ordersCollection.updateOne(
+                    { _id: new ObjectId(item._id) },
+                    { $inc: { stock: -item.quantity } }
+                )
+            }
+            res.send(result)
+        })
+
         app.get('/api/products', async (req, res) => {
             const query = {}
             if (req.query.sellerId) {
@@ -97,6 +111,16 @@ async function run() {
         app.get('/api/cart/:userId', async (req, res) => {
             const { userId } = req.params
             const result = await cartCollection.find({ userId }).toArray()
+            res.send(result)
+        })
+
+        app.get('/api/orders', async (req, res) => {
+            const query = {}
+            if (req.query.userId) {
+                query.userId = req.query.userId
+            }
+
+            const result = await ordersCollection.find(query).sort({ createdAt: -1 }).toArray()
             res.send(result)
         })
 
