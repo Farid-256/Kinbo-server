@@ -71,9 +71,9 @@ async function run() {
             const result = await ordersCollection.insertOne(ordersData)
 
             for (let item of ordersData.items) {
-                await ordersCollection.updateOne(
-                    { _id: new ObjectId(item._id) },
-                    { $inc: { stock: -item.quantity } }
+                await productCollection.updateOne(
+                    { _id: new ObjectId(item.productId) },
+                    { $inc: { stock: - item.quantity } }
                 )
             }
             res.send(result)
