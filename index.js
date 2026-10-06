@@ -79,6 +79,18 @@ async function run() {
             res.send(result)
         })
 
+
+
+
+
+
+
+
+
+
+
+        
+
         app.get('/api/products', async (req, res) => {
             const query = {}
             if (req.query.sellerId) {
@@ -134,6 +146,29 @@ async function run() {
             }
             const result = await ordersCollection.find(query).sort({ createdAt: -1 }).toArray()
             res.send(result)
+        })
+
+
+
+
+
+
+
+
+        app.patch('/api/orders/:id', async (req, res) => {
+            const { id } = req.params
+            const { status } = req.body
+
+            try {
+                const result = await ordersCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { status } }
+                )
+                res.send(result)
+            } catch (error) {
+                console.error(error)
+                res.status(500).send({ message: 'Failed to update order' })
+            }
         })
 
 
