@@ -124,6 +124,18 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/api/orders', async (req, res) => {
+            const query = {}
+            if (req.query.userId) {
+                query.userId = req.query.userId
+            }
+            if (req.query.sellerId) {
+                query['items.sellerId'] = req.query.sellerId
+            }
+            const result = await ordersCollection.find(query).sort({ createdAt: -1 }).toArray()
+            res.send(result)
+        })
+
 
 
 
