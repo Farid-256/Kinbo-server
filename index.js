@@ -29,6 +29,7 @@ async function run() {
         const companyCollection = database.collection('company')
         const cartCollection = database.collection('cart')
         const ordersCollection = database.collection('orders')
+        const sellerRequestsCollection = database.collection('sellerRequests')
 
         app.post('/api/products', async (req, res) => {
             const productData = req.body
@@ -79,6 +80,17 @@ async function run() {
             res.send(result)
         })
 
+        // POST — customer send request
+        app.post('/api/seller-requests', async (req, res) => {
+            try {
+                const requestData = req.body
+                const result = await sellerRequestsCollection.insertOne(requestData)
+                res.send(result)
+            } catch (error) {
+                console.error(error)
+                res.status(500).send({ message: 'Failed to submit request' })
+            }
+        })
 
 
 
@@ -89,7 +101,8 @@ async function run() {
 
 
 
-        
+
+
 
         app.get('/api/products', async (req, res) => {
             const query = {}
@@ -148,6 +161,31 @@ async function run() {
             res.send(result)
         })
 
+        // GET check — is already requested
+        app.get('/api/seller-requests/check', async (req, res) => {
+            try {
+                const { userId } = req.query
+                if (!userId) return res.json(null)
+
+                const result = await sellerRequestsCollection.findOne({ userId })
+                res.json(result || null)   // ✅ json(null) — valid JSON
+            } catch (error) {
+                console.error(error)
+                res.status(500).json(null)
+            }
+        })
+
+        // All seller requests (admin)
+        app.get('/api/seller-requests', async (req, res) => {
+            try {
+                const result = await sellerRequestsCollection.find().sort({ createdAt: -1 }).toArray()
+                res.send(result)
+            } catch (error) {
+                console.error(error)
+                res.status(500).send({ message: 'Failed to fetch requests' })
+            }
+        })
+
 
 
 
@@ -168,6 +206,37 @@ async function run() {
             } catch (error) {
                 console.error(error)
                 res.status(500).send({ message: 'Failed to update order' })
+            }
+        })
+
+        // Approve / Reject (admin)
+        app.patch('/api/seller-requests/:id', async (req, res) => {
+            try {
+                const { id } = req.params
+                const { status } = req.body
+
+                // ১. Request update
+                const result = await sellerRequestsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { status } }
+                )
+
+                // ২. If approved, update the user's role.
+                if (status === 'approved') {
+                    const request = await sellerRequestsCollection.findOne({ _id: new ObjectId(id) })
+
+                    // Update the user collection in Better Auth.
+                    const userCollection = database.collection('user')   // ⚠️ নাম চেক করো
+                    await userCollection.updateOne(
+                        { _id: new ObjectId(request.userId) },
+                        { $set: { role: 'business' } }
+                    )
+                }
+
+                res.send(result)
+            } catch (error) {
+                console.error(error)
+                res.status(500).send({ message: 'Failed to update request' })
             }
         })
 
