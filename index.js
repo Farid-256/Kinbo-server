@@ -30,7 +30,8 @@ async function run() {
         const cartCollection = database.collection('cart')
         const ordersCollection = database.collection('orders')
         const sellerRequestsCollection = database.collection('sellerRequests')
-        
+        const bannerCollection = database.collection('banners')
+
 
 
         app.post('/api/products', async (req, res) => {
@@ -83,10 +84,26 @@ async function run() {
         })
 
         // POST  customer send request
-        app.post('/api/seller-requests', async(req, res) =>{
+        app.post('/api/seller-requests', async (req, res) => {
             const sellerRequest = req.body
             const result = await sellerRequestsCollection.insertOne(sellerRequest)
             res.send(result)
+        })
+
+        app.post('/api/banner', async (req, res) => {
+            try {
+                const bannerData = req.body
+
+                const result = await bannerCollection.updateOne(
+                    {},
+                    { $set: bannerData },
+                    { upsert: true }
+                )
+                res.send(result)
+            } catch (error) {
+                console.error(error)
+                res.status(500).send({ message: 'Failed to save banner' })
+            }
         })
 
 
@@ -180,6 +197,16 @@ async function run() {
             } catch (error) {
                 console.error(error)
                 res.status(500).send({ message: 'Failed to fetch requests' })
+            }
+        })
+
+        app.get('/api/banner', async (req, res) => {
+            try {
+                const result = await bannerCollection.findOne()
+                res.json(result || null)
+            } catch (error) {
+                console.error(error)
+                res.status(500).json(null)
             }
         })
 
