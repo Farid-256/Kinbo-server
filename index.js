@@ -224,6 +224,12 @@ async function run() {
             res.send(result)
         })
 
+        //admin company delete api
+        app.get('/api/companies', async (req, res) => {
+            const result = await companyCollection.find().sort({ createdAt: -1 }).toArray()
+            res.send(result)
+        })
+
 
 
 
@@ -313,6 +319,38 @@ async function run() {
             const { userId } = req.params
             const result = await cartCollection.deleteMany({ userId })
             res.send(result)
+        })
+
+        //admin company delete api
+        app.delete('/api/companies/:id', async (req, res) => {
+            try {
+                const { id } = req.params
+
+
+                const company = await companyCollection.findOne({ _id: new ObjectId(id) })
+                if (!company) {
+                    return res.status(404).send({ message: 'Company not found' })
+                }
+
+
+                const result = await companyCollection.deleteOne({ _id: new ObjectId(id) })
+
+
+                const productResult = await productCollection.deleteMany({ sellerId: company.sellerId })
+
+
+                const cartResult = await cartCollection.deleteMany({ userId: company.sellerId })
+
+
+                res.send({
+                    companyDeleted: result.deletedCount,
+                    productsDeleted: productResult.deletedCount,
+                    cartItemsDeleted: cartResult.deletedCount
+                })
+            } catch (error) {
+                console.error(error)
+                res.status(500).send({ message: 'Failed to delete company' })
+            }
         })
 
 
