@@ -283,6 +283,12 @@ async function run() {
             res.send(result)
         })
 
+        app.delete('/api/cart/user/:userId', async(req, res) =>{
+            const {userId} = req.params
+            const result = await cartCollection.deleteMany({userId})
+            res.send(result)
+        })
+
 
 
 
