@@ -210,6 +210,13 @@ async function run() {
             }
         })
 
+        //update api
+        app.get('/api/products/:id', async (req, res) => {
+            const { id } = req.params
+            const result = await productCollection.findOne({ _id: new ObjectId(id) })
+            res.send(result)
+        })
+
 
 
 
@@ -239,13 +246,13 @@ async function run() {
                 const { id } = req.params
                 const { status } = req.body
 
-                // ১. Request update
+                // Request update
                 const result = await sellerRequestsCollection.updateOne(
                     { _id: new ObjectId(id) },
                     { $set: { status } }
                 )
 
-                // ২. If approved, update the user's role.
+                // If approved, update the user's role.
                 if (status === 'approved') {
                     const request = await sellerRequestsCollection.findOne({ _id: new ObjectId(id) })
 
@@ -264,28 +271,40 @@ async function run() {
             }
         })
 
+        //update api
+        app.patch('/api/products/:id', async (req, res) => {
+            const { id } = req.params
+            const updateData = req.body
 
-
-
-
-
-
-
-        app.delete('/api/product/:id', async(req, res) =>{
-            const {id} = req.params
-            const result = await productCollection.deleteOne({_id: new ObjectId(id)})
+            const result = await productCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: updateData }
+            )
             res.send(result)
         })
 
-        app.delete('/api/cart/:id', async(req, res) =>{
-            const {id} = req.params
-            const result = await cartCollection.deleteOne({_id: new ObjectId(id)})
+
+
+
+
+
+
+
+        app.delete('/api/product/:id', async (req, res) => {
+            const { id } = req.params
+            const result = await productCollection.deleteOne({ _id: new ObjectId(id) })
             res.send(result)
         })
 
-        app.delete('/api/cart/user/:userId', async(req, res) =>{
-            const {userId} = req.params
-            const result = await cartCollection.deleteMany({userId})
+        app.delete('/api/cart/:id', async (req, res) => {
+            const { id } = req.params
+            const result = await cartCollection.deleteOne({ _id: new ObjectId(id) })
+            res.send(result)
+        })
+
+        app.delete('/api/cart/user/:userId', async (req, res) => {
+            const { userId } = req.params
+            const result = await cartCollection.deleteMany({ userId })
             res.send(result)
         })
 
