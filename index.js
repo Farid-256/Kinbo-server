@@ -42,7 +42,12 @@ async function run() {
 
         app.post('/api/my-company', async (req, res) => {
             const companyData = req.body
-            const result = await companyCollection.insertOne(companyData)
+
+            const result = await companyCollection.updateOne(
+                { sellerId: companyData.sellerId },
+                { $set: companyData },
+                { upsert: true }
+            )
             res.send(result)
         })
 
@@ -105,6 +110,8 @@ async function run() {
                 res.status(500).send({ message: 'Failed to save banner' })
             }
         })
+
+
 
 
 
