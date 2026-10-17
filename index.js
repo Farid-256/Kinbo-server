@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express');
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { createRemoteJWKSet, jwtVerify } = require('jose');
 
 
 const app = express()
@@ -18,7 +19,32 @@ const client = new MongoClient(uri, {
         strict: true,
         deprecationErrors: true,
     }
-});
+})
+
+const JWKS = createRemoteJWKSet(
+    new URL('http://localhost:3000/api/auth/jwks')
+)
+
+const verifyToken = async(req, res, next) => {
+    const authHeader = req?.headers.authorization
+    if(!authHeader){
+        return res.status((401)).json({message: 'Unauthorization'})
+    }
+    const token = authHeader.split(' ')[1]
+    if(!token){
+        return res.status((401)).json({message: 'Unauthorization'})
+    }
+
+    try{
+        const {payload} = await jwtVerify(token, JWKS)
+        console.log(payload)
+        next()
+    } catch(error){
+        return res.status(403).json({message: "Forbidden"})
+    }
+
+    
+}
 
 async function run() {
     try {
@@ -33,14 +59,15 @@ async function run() {
         const bannerCollection = database.collection('banners')
 
 
-
-        app.post('/api/products', async (req, res) => {
+        //done
+        app.post('/api/products', verifyToken, async (req, res) => {
             const productData = req.body
             const result = await productCollection.insertOne(productData)
             res.send(result)
         })
 
-        app.post('/api/my-company', async (req, res) => {
+        //done
+        app.post('/api/my-company', verifyToken, async (req, res) => {
             const companyData = req.body
 
             const result = await companyCollection.updateOne(
@@ -51,7 +78,8 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/api/cart', async (req, res) => {
+        //done
+        app.post('/api/cart', verifyToken, async (req, res) => {
             const cartData = req.body
 
             const existing = await cartCollection.findOne({
@@ -75,7 +103,8 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/api/orders', async (req, res) => {
+        //done
+        app.post('/api/orders', verifyToken, async (req, res) => {
             const ordersData = req.body
             const result = await ordersCollection.insertOne(ordersData)
 
@@ -89,13 +118,15 @@ async function run() {
         })
 
         // POST  customer send request
-        app.post('/api/seller-requests', async (req, res) => {
+        //done
+        app.post('/api/seller-requests', verifyToken, async (req, res) => {
             const sellerRequest = req.body
             const result = await sellerRequestsCollection.insertOne(sellerRequest)
             res.send(result)
         })
 
-        app.post('/api/banner', async (req, res) => {
+        //done
+        app.post('/api/banner', verifyToken, async (req, res) => {
             try {
                 const bannerData = req.body
 
@@ -125,17 +156,6 @@ async function run() {
 
 
 
-        // app.get('/api/products', async (req, res) => {
-        //     const query = {}
-        //     if (req.query.sellerId) {
-        //         query.sellerId = req.query.sellerId
-        //     }
-        //     if (req.query.status) {
-        //         query.status = req.query.status
-        //     }
-        //     const result = await productCollection.find(query).toArray()
-        //     res.send(result)
-        // })
 
         app.get('/api/my-company', async (req, res) => {
             const { sellerId } = req.query
@@ -148,29 +168,23 @@ async function run() {
             res.json(result || null)
         })
 
-        app.get('/api/products/:id', async (req, res) => {
+        //Details page api
+        //done
+        app.get('/api/products/:id', verifyToken, async (req, res) => {
             const { id } = req.params
             const result = await productCollection.findOne({ _id: new ObjectId(id) })
             res.send(result)
         })
 
-        app.get('/api/cart/:userId', async (req, res) => {
+        //done
+        app.get('/api/cart/:userId', verifyToken, async (req, res) => {
             const { userId } = req.params
             const result = await cartCollection.find({ userId }).toArray()
             res.send(result)
         })
 
-        app.get('/api/orders', async (req, res) => {
-            const query = {}
-            if (req.query.userId) {
-                query.userId = req.query.userId
-            }
-
-            const result = await ordersCollection.find(query).sort({ createdAt: -1 }).toArray()
-            res.send(result)
-        })
-
-        app.get('/api/orders', async (req, res) => {
+        //done
+        app.get('/api/orders', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.userId) {
                 query.userId = req.query.userId
@@ -183,7 +197,7 @@ async function run() {
         })
 
         // GET check — is already requested
-        app.get('/api/seller-requests/check', async (req, res) => {
+        app.get('/api/seller-requests/check', verifyToken, async (req, res) => {
             try {
                 const { userId } = req.query
                 if (!userId) return res.json(null)
@@ -197,7 +211,7 @@ async function run() {
         })
 
         // All seller requests (admin)
-        app.get('/api/seller-requests', async (req, res) => {
+        app.get('/api/seller-requests', verifyToken, async (req, res) => {
             try {
                 const result = await sellerRequestsCollection.find().sort({ createdAt: -1 }).toArray()
                 res.send(result)
@@ -215,13 +229,6 @@ async function run() {
                 console.error(error)
                 res.status(500).json(null)
             }
-        })
-
-        //update api
-        app.get('/api/products/:id', async (req, res) => {
-            const { id } = req.params
-            const result = await productCollection.findOne({ _id: new ObjectId(id) })
-            res.send(result)
         })
 
         //admin company delete api
@@ -273,8 +280,8 @@ async function run() {
 
 
 
-
-        app.patch('/api/orders/:id', async (req, res) => {
+        //done
+        app.patch('/api/orders/:id', verifyToken, async (req, res) => {
             const { id } = req.params
             const { status } = req.body
 
@@ -291,7 +298,7 @@ async function run() {
         })
 
         // Approve / Reject (admin)
-        app.patch('/api/seller-requests/:id', async (req, res) => {
+        app.patch('/api/seller-requests/:id', verifyToken, async (req, res) => {
             try {
                 const { id } = req.params
                 const { status } = req.body
@@ -322,7 +329,7 @@ async function run() {
         })
 
         //update api
-        app.patch('/api/products/:id', async (req, res) => {
+        app.patch('/api/products/:id', verifyToken, async (req, res) => {
             const { id } = req.params
             const updateData = req.body
 
@@ -340,26 +347,26 @@ async function run() {
 
 
 
-        app.delete('/api/product/:id', async (req, res) => {
+        app.delete('/api/product/:id', verifyToken, async (req, res) => {
             const { id } = req.params
             const result = await productCollection.deleteOne({ _id: new ObjectId(id) })
             res.send(result)
         })
 
-        app.delete('/api/cart/:id', async (req, res) => {
+        app.delete('/api/cart/:id', verifyToken, async (req, res) => {
             const { id } = req.params
             const result = await cartCollection.deleteOne({ _id: new ObjectId(id) })
             res.send(result)
         })
 
-        app.delete('/api/cart/user/:userId', async (req, res) => {
+        app.delete('/api/cart/user/:userId', verifyToken, async (req, res) => {
             const { userId } = req.params
             const result = await cartCollection.deleteMany({ userId })
             res.send(result)
         })
 
         //admin company delete api
-        app.delete('/api/companies/:id', async (req, res) => {
+        app.delete('/api/companies/:id', verifyToken, async (req, res) => {
             try {
                 const { id } = req.params
 
