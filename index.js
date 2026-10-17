@@ -125,17 +125,17 @@ async function run() {
 
 
 
-        app.get('/api/products', async (req, res) => {
-            const query = {}
-            if (req.query.sellerId) {
-                query.sellerId = req.query.sellerId
-            }
-            if (req.query.status) {
-                query.status = req.query.status
-            }
-            const result = await productCollection.find(query).toArray()
-            res.send(result)
-        })
+        // app.get('/api/products', async (req, res) => {
+        //     const query = {}
+        //     if (req.query.sellerId) {
+        //         query.sellerId = req.query.sellerId
+        //     }
+        //     if (req.query.status) {
+        //         query.status = req.query.status
+        //     }
+        //     const result = await productCollection.find(query).toArray()
+        //     res.send(result)
+        // })
 
         app.get('/api/my-company', async (req, res) => {
             const { sellerId } = req.query
@@ -228,6 +228,43 @@ async function run() {
         app.get('/api/companies', async (req, res) => {
             const result = await companyCollection.find().sort({ createdAt: -1 }).toArray()
             res.send(result)
+        })
+
+        //pagination
+        app.get('/api/products', async (req, res) => {
+            try {
+                const query = {}
+
+                if (req.query.sellerId) {
+                    query.sellerId = req.query.sellerId
+                }
+
+                if (req.query.status) {
+                    query.status = req.query.status
+                }
+
+                const page = Math.max(1, parseInt(req.query.page) || 1)
+                const limit = Math.max(1, parseInt(req.query.limit) || 32)
+                const skip = (page - 1) * limit
+
+                const totalProducts = await productCollection.countDocuments(query)
+
+                const products = await productCollection
+                    .find(query)
+                    .skip(skip)
+                    .limit(limit)
+                    .toArray()
+
+                res.send({
+                    products,
+                    currentPage: page,
+                    totalPages: Math.ceil(totalProducts / limit),
+                    totalProducts
+                })
+            } catch (error) {
+                console.error(error)
+                res.status(500).send({ message: 'Failed to fetch products' })
+            }
         })
 
 
