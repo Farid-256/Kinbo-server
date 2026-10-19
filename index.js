@@ -118,7 +118,7 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/api/banner', verifyToken, async (req, res) => {
+        app.post('/api/banner', async (req, res) => {
             try {
                 const bannerData = req.body
 
@@ -210,7 +210,7 @@ async function run() {
             }
         })
 
-        app.get('/api/banner', verifyToken, async (req, res) => {
+        app.get('/api/banner', async (req, res) => {
             try {
                 const result = await bannerCollection.findOne()
                 res.json(result || null)
