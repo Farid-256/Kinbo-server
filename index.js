@@ -58,14 +58,12 @@ async function run() {
         const bannerCollection = database.collection('banners')
 
 
-        //done
         app.post('/api/products', verifyToken, async (req, res) => {
             const productData = req.body
             const result = await productCollection.insertOne(productData)
             res.send(result)
         })
 
-        //done
         app.post('/api/my-company', verifyToken, async (req, res) => {
             const companyData = req.body
 
@@ -76,8 +74,6 @@ async function run() {
             )
             res.send(result)
         })
-
-        //done
         app.post('/api/cart', verifyToken, async (req, res) => {
             const cartData = req.body
 
@@ -102,7 +98,6 @@ async function run() {
             res.send(result)
         })
 
-        //done
         app.post('/api/orders', verifyToken, async (req, res) => {
             const ordersData = req.body
             const result = await ordersCollection.insertOne(ordersData)
@@ -117,15 +112,13 @@ async function run() {
         })
 
         // POST  customer send request
-        //done
         app.post('/api/seller-requests', verifyToken, async (req, res) => {
             const sellerRequest = req.body
             const result = await sellerRequestsCollection.insertOne(sellerRequest)
             res.send(result)
         })
 
-        //done
-        app.post('/api/banner', async (req, res) => {
+        app.post('/api/banner', verifyToken, async (req, res) => {
             try {
                 const bannerData = req.body
 
@@ -168,21 +161,18 @@ async function run() {
         })
 
         //Details page api
-        //done
         app.get('/api/products/:id', verifyToken, async (req, res) => {
             const { id } = req.params
             const result = await productCollection.findOne({ _id: new ObjectId(id) })
             res.send(result)
         })
 
-        //done
         app.get('/api/cart/:userId', verifyToken, async (req, res) => {
             const { userId } = req.params
             const result = await cartCollection.find({ userId }).toArray()
             res.send(result)
         })
 
-        //done
         app.get('/api/orders', verifyToken, async (req, res) => {
             const query = {}
             if (req.query.userId) {
@@ -220,7 +210,7 @@ async function run() {
             }
         })
 
-        app.get('/api/banner', async (req, res) => {
+        app.get('/api/banner', verifyToken, async (req, res) => {
             try {
                 const result = await bannerCollection.findOne()
                 res.json(result || null)
