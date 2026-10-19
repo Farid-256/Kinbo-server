@@ -22,32 +22,32 @@ const client = new MongoClient(uri, {
 })
 
 const JWKS = createRemoteJWKSet(
-    new URL('http://localhost:3000/api/auth/jwks')
+    new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
 )
 
-const verifyToken = async(req, res, next) => {
+const verifyToken = async (req, res, next) => {
     const authHeader = req?.headers.authorization
-    if(!authHeader){
-        return res.status((401)).json({message: 'Unauthorization'})
+    if (!authHeader) {
+        return res.status((401)).json({ message: 'Unauthorization' })
     }
     const token = authHeader.split(' ')[1]
-    if(!token){
-        return res.status((401)).json({message: 'Unauthorization'})
+    if (!token) {
+        return res.status((401)).json({ message: 'Unauthorization' })
     }
 
-    try{
-        const {payload} = await jwtVerify(token, JWKS)
+    try {
+        const { payload } = await jwtVerify(token, JWKS)
         next()
-    } catch(error){
-        return res.status(403).json({message: "Forbidden"})
+    } catch (error) {
+        return res.status(403).json({ message: "Forbidden" })
     }
 
-    
+
 }
 
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
 
         const database = client.db('kinbo_db')
         const productCollection = database.collection('products')
@@ -125,7 +125,7 @@ async function run() {
         })
 
         //done
-        app.post('/api/banner', verifyToken, async (req, res) => {
+        app.post('/api/banner', async (req, res) => {
             try {
                 const bannerData = req.body
 
@@ -404,8 +404,8 @@ async function run() {
 
 
 
-        await client.db('admin').command({ ping: 1 })
-        console.log("MongoDB connected successfully!");
+        // await client.db('admin').command({ ping: 1 })
+        // console.log("MongoDB connected successfully!");
     } finally {
         // await client.close();
     }
