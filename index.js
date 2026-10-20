@@ -99,16 +99,32 @@ async function run() {
         })
 
         app.post('/api/orders', verifyToken, async (req, res) => {
-            const ordersData = req.body
-            const result = await ordersCollection.insertOne(ordersData)
+            try {
+                const ordersData = req.body
+                const updatedItems = await Promise.all(ordersData.items.map(async (item) => {
+                    const product = await productCollection.findOne({ _id: new ObjectId(item.productId) })
+                    return {
+                        ...item,
+                        sellerId: product?.sellerId || item.sellerId
+                    }
+                }))
 
-            for (let item of ordersData.items) {
-                await productCollection.updateOne(
-                    { _id: new ObjectId(item.productId) },
-                    { $inc: { stock: - item.quantity } }
-                )
+                ordersData.items = updatedItems
+
+                const result = await ordersCollection.insertOne(ordersData)
+
+                for (let item of ordersData.items) {
+                    await productCollection.updateOne(
+                        { _id: new ObjectId(item.productId) },
+                        { $inc: { stock: - item.quantity } }
+                    )
+                }
+
+                res.send(result)
+            } catch (error) {
+                console.error("Order creation failed:", error)
+                res.status(500).send({ message: 'Failed to create order' })
             }
-            res.send(result)
         })
 
         // POST  customer send request
@@ -181,7 +197,13 @@ async function run() {
             if (req.query.sellerId) {
                 query['items.sellerId'] = req.query.sellerId
             }
+
+            console.log("Seller Query Object:", query);
+
             const result = await ordersCollection.find(query).sort({ createdAt: -1 }).toArray()
+
+            console.log("Orders Found in DB:", result.length);
+
             res.send(result)
         })
 
